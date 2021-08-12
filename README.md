@@ -16,8 +16,9 @@ images with noticeable suppression of the artifacts that usually occur with cubi
 Compared to the open source MATLAB version, we are ready to do the following :
 
 -   [x] Python Version
--   [x] Support RGB Image 
--   [ ] Eliminate edge black point
+-   [x] RGB Image support 
+-   [x] MultiProcessing support
+-   [ ] Eliminate edge white points
 
 
 

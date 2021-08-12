@@ -61,26 +61,45 @@ def PixelValue(A, type, w, n, f):
         p2 = np.dot(v2, f)
         p = (w[0]*p1+w[1]*p2)/(w[0]+w[1])
     return p
+
+def padding(img, H, W):
+    zimg = np.zeros((H+6,W+6))
+    zimg[3:H+3,3:W+3] = img
+    #Pad the first/last three col and row
+    zimg[3:H+3,1]=img[:,0]
+    zimg[H+3::2,3:W+3]=img[H-2:H-1,:]
+    zimg[3:H+3,W+3::2]=img[:,W-2:W-1]
+    zimg[1,3:W+3]=img[0,:]
+    #Pad the missing nine points
+    zimg[1,1]=img[0,0]
+    zimg[H+3::2,1]=img[H-2,0]
+    zimg[H+3::2,W+3::2]=img[H-2,W-2]
+    zimg[1,W+3::2]=img[0,W-2]
+    return zimg
+
 def _DCC(I, k, T):
     m, n = I.shape
     nRow = 2*m
     nCol = 2*n
     A = np.zeros([nRow, nCol])
     A[0:-1:2, 0:-1:2] = I
+    A = padding(A, nRow, nCol)
     f = np.array([-1, 9, 9, -1])/16
-    for i in range(3,nRow-4,2):
-        for j in range(3,nCol-4,2):
+    for i in range(4,nRow+3,2):
+        for j in range(4,nCol+3,2):
             [w,n] = DetectDirect(A[i-3:i+4,j-3:j+4],1,k,T)
             A[i,j] = PixelValue(A[i-3:i+4,j-3:j+4],1,w,n,f)
-    for i in range(4,nRow-5,2):
-        for j in range(3,nCol-4,2):
+    for i in range(3,nRow+3,2):
+        for j in range(4,nCol+3,2):
             [w,n] = DetectDirect(A[i-2:i+3,j-2:j+3],2,k,T)
             A[i,j] = PixelValue(A[i-3:i+4,j-3:j+4],2,w,n,f)
-    for i in range(3,nRow-4,2):
-        for j in range(4,nCol-5,2):
+    for i in range(4,nRow+3,2):
+        for j in range(3,nCol+3,2):
             [w,n] = DetectDirect(A[i-2:i+3,j-2:j+3],3,k,T)
             A[i,j] = PixelValue(A[i-3:i+4,j-3:j+4],3,w,n,f)
-    return A                
+    return A[3:-3,3:-3]                
+    # return A 
+
 
 # uniform format image
 def numpy2img(img, out_type=np.uint8, min_max=(0, 1)):
@@ -143,7 +162,7 @@ if __name__ == '__main__':
                         default='./data/hr')
     parser.add_argument('--out', '-o', type=str, default='./data/sr')
 
-    parser.add_argument('--level', type=int, default=2)
+    parser.add_argument('--level', type=int, default=1)
     parser.add_argument('--n_worker', type=int, default=8)
 
     args = parser.parse_args()
