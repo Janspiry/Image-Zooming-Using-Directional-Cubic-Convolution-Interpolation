@@ -17,8 +17,8 @@ Compared to the open source MATLAB version, we are ready to do the following :
 
 -   [x] Python Version
 -   [x] RGB Image support 
--   [x] MultiProcessing support
--   [ ] Eliminate edge white points
+-   [x] Multi Process support
+-   [x] Eliminate edge white points
 
 
 
@@ -34,7 +34,14 @@ Compared to the open source MATLAB version, we are ready to do the following :
 
 ###  Usage
 
-We have integrated the open source version of MATLAB and the manually implemented version of Python, which can be found in corresponding folder.
+We have integrated the open source version of MATLAB and the manually implemented version of Python, which can be found in corresponding folder. Take the python version for a example:
+
+```python
+from DCC import DCC
+img = Image.open(img_file).convert('RGB')
+img = np.array(img).astype(np.float)/255
+sr_img = DCC(img, level)
+```
 
 
 

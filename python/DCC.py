@@ -1,11 +1,4 @@
 import numpy as np
-from PIL import Image
-import argparse
-import multiprocessing
-from functools import partial
-from tqdm import tqdm
-import os
-from pathlib import Path
 def DetectDirect(A, type, k, T):
     if type == 1:
         # 45 degree diagonal direction
@@ -62,33 +55,47 @@ def PixelValue(A, type, w, n, f):
         p = (w[0]*p1+w[1]*p2)/(w[0]+w[1])
     return p
 
-def padding(img, H, W):
-    zimg = np.zeros((H+6,W+6))
-    zimg[3:H+3,3:W+3] = img
-    #Pad the first/last three col and row
-    zimg[3:H+3,1]=img[:,0]
-    zimg[H+3::2,3:W+3]=img[H-2:H-1,:]
-    zimg[3:H+3,W+3::2]=img[:,W-2:W-1]
-    zimg[1,3:W+3]=img[0,:]
-    #Pad the missing nine points
-    zimg[1,1]=img[0,0]
-    zimg[H+3::2,1]=img[H-2,0]
-    zimg[H+3::2,W+3::2]=img[H-2,W-2]
-    zimg[1,W+3::2]=img[0,W-2]
-    return zimg
+def PadLeftTop(img_pad, H, W):
+    img = img_pad[3:-3,3:-3]
+    # Pad the first/last three col and row
+    img_pad[3:H+3,1]=img[:,0]
+    img_pad[H+3::2,3:W+3]=img[H-2:H-1,:]
+    img_pad[3:H+3,W+3::2]=img[:,W-2:W-1]
+    img_pad[1,3:W+3]=img[0,:]
+    # Pad the missing nine points
+    img_pad[1,1]=img[0,0]
+    img_pad[H+3::2,1]=img[H-2,0]
+    img_pad[H+3::2,W+3::2]=img[H-2,W-2]
+    img_pad[1,W+3::2]=img[0,W-2]
+    return img_pad
+
+def PadRightBottom(img_pad, H, W):
+    img = img_pad[3:-3,3:-3]
+    # Pad the first/last three col and row
+    img_pad[3:H+3,0:3:2]=img[:,1:2]
+    img_pad[H+4::2,3:W+3]=img[H-1:H,:]
+    img_pad[3:H+3,W+4::2]=img[:,W-1:W]
+    img_pad[0:3:2,3:W+3]=img[1,:]
+    # Pad the missing nine points
+    img_pad[0:3:2,0:3:2]=img[1,1]
+    img_pad[H+4,0:3:2]=img[H-1,1]
+    img_pad[H+4,W+4]=img[H-1,W-1]
+    img_pad[0:3:2,W+4]=img[0,W-1]
+    return img_pad
 
 def _DCC(I, k, T):
     m, n = I.shape
     nRow = 2*m
     nCol = 2*n
-    A = np.zeros([nRow, nCol])
-    A[0:-1:2, 0:-1:2] = I
-    A = padding(A, nRow, nCol)
+    A = np.zeros([nRow+6, nCol+6])
+    A[0+3:-1-3:2, 0+3:-1-3:2] = I
+    A = PadLeftTop(A, nRow, nCol)
     f = np.array([-1, 9, 9, -1])/16
     for i in range(4,nRow+3,2):
         for j in range(4,nCol+3,2):
             [w,n] = DetectDirect(A[i-3:i+4,j-3:j+4],1,k,T)
             A[i,j] = PixelValue(A[i-3:i+4,j-3:j+4],1,w,n,f)
+    A = PadRightBottom(A, nRow, nCol)
     for i in range(3,nRow+3,2):
         for j in range(4,nCol+3,2):
             [w,n] = DetectDirect(A[i-2:i+3,j-2:j+3],2,k,T)
@@ -100,72 +107,22 @@ def _DCC(I, k, T):
     return A[3:-3,3:-3]                
     # return A 
 
-
-# uniform format image
-def numpy2img(img, out_type=np.uint8, min_max=(0, 1)):
-    img = img.clip(*min_max)  # clamp
-    img = (img - min_max[0]) / \
-        (min_max[1] - min_max[0])  # to range [0,1]
-    if out_type == np.uint8:
-        img_np = (img * 255.0).round()
-    return img_np.astype(out_type)
-
-# resize image by DCC algorithm
-def resize_worker(img_file, level):
-    # Image to numpy
-    img = Image.open(img_file).convert('RGB')
-    img = np.array(img).astype(np.float)
-    img = img/255
-    if img.ndim == 2:
-        img = np.expand_dims(img, axis=2)
-    # hyper parameters
+'''
+img: Shape[H,W,C], Value Range[0-1]
+level: super resolution level
+Return: super resolution img who shape is the same with input
+'''
+def DCC(img, level):
+    # get the low resolution image
     lr_img = img[0:-1:2**level, 0:-1:2**level, :]
+    # hyper parameters
     k, T = 5, 1.15
     sr_img = img
+    # get the high resolution image channel by channel
     for channel in range(lr_img.shape[-1]):
         sr_img_simple = lr_img[:,:,channel]
         for _ in range(level):
-            sr_img_simple  = _DCC(sr_img_simple , k, T)
+            sr_img_simple  = _DCC(sr_img_simple, k, T)
         sr_img[:,:,channel] = sr_img_simple
-    # return image names and processsd image
-    return img_file.name.split('.')[0], Image.fromarray(numpy2img(sr_img))
+    return sr_img
 
-def prepare(img_path, out_path, n_worker, level):
-    resize_fn = partial(resize_worker, level=level)
-
-    files = [p for p in Path(f'{img_path}').glob(f'**/*')]
-    os.makedirs(out_path, exist_ok=True)
-    total = 0
-    for img in tqdm(files):
-        i, img = resize_fn(img)
-        img.save(
-            '{}/{}_{}.png'.format(out_path, i.zfill(5), 'dcc_numpy'))
-        total += 1
-
-# multiprocessing support
-def prepare_mp(img_path, out_path, n_worker, level):
-    resize_fn = partial(resize_worker, level=level)
-
-    files = [p for p in Path(f'{img_path}').glob(f'**/*')]
-    os.makedirs(out_path, exist_ok=True)
-
-    total = 0
-    with multiprocessing.Pool(n_worker) as pool:
-        for i, img in tqdm(pool.imap_unordered(resize_fn, files)):
-            img.save(
-                '{}/{}_{}.png'.format(out_path, i.zfill(5), 'dcc_numpy'))
-            total += 1
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--path', '-p', type=str,
-                        default='./data/hr')
-    parser.add_argument('--out', '-o', type=str, default='./data/sr')
-
-    parser.add_argument('--level', type=int, default=1)
-    parser.add_argument('--n_worker', type=int, default=8)
-
-    args = parser.parse_args()
-    # args.out = '{}_{}_{}'.format(args.out, 'dcc_numpy', 2**args.level)
-
-    prepare(args.path, args.out, args.n_worker, level=args.level)
