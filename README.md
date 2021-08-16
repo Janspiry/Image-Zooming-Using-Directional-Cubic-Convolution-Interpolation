@@ -24,11 +24,11 @@ Compared to the open source MATLAB version, we are ready to do the following :
 
 ### Result
 
-| Samples\|Methods | Bilinear                                        | Bicubic                                       | DCC                                               |
-| ---------------- | ----------------------------------------------- | --------------------------------------------- | ------------------------------------------------- |
-| Sample I         | ![00000_bilinear](./data/sr/00000_bilinear.png) | ![00000_bicubic](./data/sr/00000_bicubic.png) | ![00000_dcc_numpy](./data/sr/00000_dcc_numpy.png) |
-| Sample II        | ![00001_bilinear](./data/sr/00001_bilinear.png) | ![00001_bicubic](./data/sr/00001_bicubic.png) | ![00001_dcc_numpy](./data/sr/00001_dcc_numpy.png) |
-| Sample III       | ![00002_bilinear](./data/sr/00002_bilinear.png) | ![00002_bicubic](./data/sr/00002_bicubic.png) | ![00002_dcc_numpy](./data/sr/00002_dcc_numpy.png) |
+| Bilinear                                        | Bicubic                                       | DCC                                               |
+| ----------------------------------------------- | --------------------------------------------- | ------------------------------------------------- |
+| ![00000_bilinear](./data/sr/00000_bilinear.png) | ![00000_bicubic](./data/sr/00000_bicubic.png) | ![00000_dcc_numpy](./data/sr/00000_dcc_numpy.png) |
+| ![00001_bilinear](./data/sr/00001_bilinear.png) | ![00001_bicubic](./data/sr/00001_bicubic.png) | ![00001_dcc_numpy](./data/sr/00001_dcc_numpy.png) |
+| ![00002_bilinear](./data/sr/00002_bilinear.png) | ![00002_bicubic](./data/sr/00002_bicubic.png) | ![00002_dcc_numpy](./data/sr/00002_dcc_numpy.png) |
 
 
 
@@ -41,6 +41,15 @@ from DCC import DCC
 img = Image.open(img_file).convert('RGB')
 img = np.array(img).astype(np.float)/255
 sr_img = DCC(img, level)
+```
+
+*Note*: DCC get the low resolution image first by interval sampling in MATLAB version, which is not the same with general method. You can change following code to use different down-sample methods or just use the low resolution image as input.
+
+```python
+def DCC(img, level):
+    # get the low resolution image by interval sampling
+    lr_img = img[0:-1:2**level, 0:-1:2**level, :]
+    sr_img = img
 ```
 
 

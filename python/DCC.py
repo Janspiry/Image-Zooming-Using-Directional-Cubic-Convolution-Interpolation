@@ -113,7 +113,7 @@ level: super resolution level
 Return: super resolution img who shape is the same with input
 '''
 def DCC(img, level):
-    # get the low resolution image
+    # get the low resolution image by interval sampling
     lr_img = img[0:-1:2**level, 0:-1:2**level, :]
     # hyper parameters
     k, T = 5, 1.15
