@@ -13,7 +13,7 @@ images with noticeable suppression of the artifacts that usually occur with cubi
 
 ### Status
 
-Compared to the open source MATLAB version, we are ready to do the following :
+Compared to the open source [MATLAB](https://ww2.mathworks.cn/matlabcentral/fileexchange/38570-image-zooming-using-directional-cubic-convolution-interpolation) version, we are ready to do the following :
 
 -   [x] Python Version
 -   [x] RGB Image support 
