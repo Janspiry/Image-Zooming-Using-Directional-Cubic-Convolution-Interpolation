@@ -6,7 +6,7 @@
 
 ### Brief
 
-This is a unoffical python implementation about **Image Zooming Using Directional Cubic Convolution Interpolation (DCC)** by **Numpy**, which claims it can preserve the sharp edges and details of
+This is a unofficial Python implementation about **Image Zooming Using Directional Cubic Convolution Interpolation (DCC)** by **Numpy**, which claims it can preserve the sharp edges and details of
 images with noticeable suppression of the artifacts that usually occur with cubic convolution interpolation.  
 
 
@@ -34,8 +34,7 @@ Compared to the open source [MATLAB](https://ww2.mathworks.cn/matlabcentral/file
 
 ###  Usage
 
-We have integrated the open source version of MATLAB and the manually implemented version of Python, which can be found in corresponding folder. Take the python version for a example:
-
+We have integrated the open-source version of MATLAB and the manually implemented version of Python, which can be found in the corresponding folder. Take the python version for an example:
 ```python
 from DCC import DCC
 img = Image.open(img_file).convert('RGB')
@@ -43,7 +42,7 @@ img = np.array(img).astype(np.float)/255
 sr_img = DCC(img, level)
 ```
 
-*Note*: DCC get the low resolution image first by interval sampling in MATLAB version, which is not the same with general method. You can change following code to use different down-sample methods or just use the low resolution image as input.
+*Note*: DCC gets the low-resolution image first by interval sampling in the MATLAB version, which is not the same as the general method. You can change the following code to use different down-sample methods or just use the low-resolution image as input.
 
 ```python
 def DCC(img, level):
